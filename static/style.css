@@ -2,16 +2,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --bg: #080d18;
-    --sidebar: #0b1220;
-    --panel: #101a2b;
-    --border: #202e43;
-    --text: #edf4ff;
-    --muted: #8494ad;
-    --cyan: #37d6e8;
-    --blue: #5685ff;
-    --red: #ff637d;
-    --green: #48d6a0;
+    --bg: #f5f6f8;
+    --sidebar: #ffffff;
+    --panel: #ffffff;
+    --border: #e2e5e9;
+    --text: #202833;
+    --muted: #707986;
+    --cyan: #334e68;
+    --blue: #486581;
+    --red: #c2414b;
+    --green: #287d5a;
 }
 
 * {
@@ -68,11 +68,11 @@ body {
     transition: 0.2s;
 }
 
-.nav-item:hover, .nav-item.active {
-    color: var(--cyan);
-    background: #13263a;
+.nav-item:hover,
+.nav-item.active {
+    color: #263b50;
+    background: #eef1f4;
 }
-
 .sidebar-bottom {
     margin-top: auto;
     padding: 15px 5px;
@@ -144,10 +144,17 @@ h3 { font-size: 15px; }
     margin-bottom: 35px;
 }
 
-.kpi-card, .panel, .upload-panel {
+.kpi-card, .panel{
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 12px;
+}
+.upload-panel {
+    padding: 23px;
+    margin-bottom: 30px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #ffffff;
 }
 
 .kpi-card {
@@ -217,8 +224,8 @@ h3 { font-size: 15px; }
 }
 
 .file-picker, .secondary-btn {
-    background: #18273a;
-    border: 1px solid #30455e;
+    background: #ffffff;
+    border: 1px solid var(--border);
     color: var(--text);
 }
 
@@ -287,7 +294,7 @@ h3 { font-size: 15px; }
 }
 
 .table-toolbar input, .table-toolbar select {
-    background: #0b1423;
+    background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 7px;
     padding: 11px 13px;
@@ -311,7 +318,7 @@ table {
 
 th {
     color: var(--muted);
-    background: #0d1727;
+    background: #f0f2f5;
     font-weight: 500;
     text-align: left;
 }
@@ -321,7 +328,9 @@ th, td {
     border-bottom: 1px solid var(--border);
 }
 
-tbody tr:hover { background: #142136; }
+tbody tr:hover {
+    background: #f7f8fa;
+}
 
 .badge {
     display: inline-block;
@@ -401,4 +410,129 @@ footer {
     .table-toolbar { flex-direction: column; }
     .table-toolbar input { width: 100%; }
     .section-heading { align-items: flex-start; flex-direction: column; }
+}
+
+
+/* White theme overrides */
+body {
+    background: var(--bg);
+    color: var(--text);
+}
+
+.sidebar,
+.kpi-card,
+.panel,
+.upload-panel {
+    background: #ffffff;
+    border-color: var(--border);
+}
+
+.upload-panel {
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+}
+
+.nav-item:hover,
+.nav-item.active {
+    color: #047857;
+    background: #ecfdf5;
+}
+
+.system-status,
+.file-picker,
+.secondary-btn {
+    background: #ffffff;
+    border-color: var(--border);
+    color: var(--text);
+}
+
+#analyzeBtn {
+    background: #059669;
+    color: #ffffff;
+}
+
+#analyzeBtn:hover {
+    background: #047857;
+}
+
+.table-toolbar input,
+.table-toolbar select {
+    background: #ffffff;
+    color: var(--text);
+    border-color: var(--border);
+}
+
+th {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+tbody tr:hover {
+    background: #f8fafc;
+}
+
+.badge.anomaly {
+    color: #be123c;
+    background: #fff1f2;
+}
+
+.badge.normal {
+    color: #047857;
+    background: #ecfdf5;
+}
+
+.kpi-card:hover {
+    border-color: #a7f3d0;
+}
+
+.upload-panel {
+    border-color: #d1fae5;
+}
+
+.file-picker:hover,
+.secondary-btn:hover {
+    border-color: #059669;
+}
+
+#message,
+.subtitle,
+.muted,
+.disclaimer,
+.table-footer {
+    color: #64748b;
+}
+
+footer {
+    color: #64748b;
+    border-color: var(--border);
+}
+/* Remove green accents */
+.logo span,
+.nav-label,
+.eyebrow,
+.nav-item.active,
+.nav-item:hover {
+    color: #334155 !important;
+}
+
+.nav-item.active,
+.nav-item:hover {
+    background: #eef1f4 !important;
+}
+
+.upload-panel {
+    border-color: #e2e5e9 !important;
+}
+
+.kpi-card:hover {
+    border-color: #e2e5e9 !important;
+}
+
+#analyzeBtn {
+    background: #334155 !important;
+    color: #ffffff !important;
+    border: 1px solid #334155 !important;
+}
+
+#analyzeBtn:hover {
+    background: #1e293b !important;
 }
