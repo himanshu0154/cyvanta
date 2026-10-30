@@ -6,8 +6,7 @@ import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
-
-THRESHOLD = -0.04045090522184547
+THRESHOLD = -0.02
 MAX_ROWS = 750_000
 
 

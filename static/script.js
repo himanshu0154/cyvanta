@@ -235,7 +235,7 @@ function renderTable() {
         : "normal-row";
 
             const values = [
-    item.Timestamp ?? "—",
+   
     item["Flow ID"] ?? item.flow_id ?? index + 1,
     item.prediction ?? "Unknown",
     formatNumber(item.anomaly_score, 6),
