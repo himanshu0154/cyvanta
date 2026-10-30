@@ -8,7 +8,7 @@ import logging
 from flask import render_template
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024  # 25 MB
+app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024
 
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR / "ml"))

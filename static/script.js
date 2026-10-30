@@ -112,7 +112,14 @@ uploadForm.addEventListener("submit", async (event) => {
             body: formData
         });
 
-        const data = await response.json();
+        const text = await response.text();
+
+let data;
+try {
+    data = JSON.parse(text);
+} catch {
+    throw new Error(`Server returned HTML instead of JSON (HTTP ${response.status}). Check the Flask terminal.`);
+}
 
         if (!response.ok) {
             throw new Error(data.error || "Analysis failed.");

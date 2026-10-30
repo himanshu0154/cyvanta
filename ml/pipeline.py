@@ -8,8 +8,8 @@ import pandas as pd
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
 
-THRESHOLD = 0.02
-MAX_ROWS = 300_000
+THRESHOLD = -0.03
+MAX_ROWS = 750_000
 
 
 def load_model():
