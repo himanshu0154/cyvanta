@@ -9,30 +9,63 @@ BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
 
 THRESHOLD = 0.02
+MAX_ROWS = 300_000
 
 
 def load_model():
-    """Load the trained model and required features."""
-    model = joblib.load(MODEL_DIR / "isolation_forest.joblib")
-    features = joblib.load(MODEL_DIR / "features.joblib")
+    """Load the trained model and its required features."""
+    model_path = MODEL_DIR / "isolation_forest.joblib"
+    features_path = MODEL_DIR / "features.joblib"
+
+    if not model_path.exists() or not features_path.exists():
+        raise FileNotFoundError(
+            "Model files not found. Check that ml/models/ contains "
+            "isolation_forest.joblib and features.joblib."
+        )
+
+    model = joblib.load(model_path)
+    features = joblib.load(features_path)
+
     return model, features
 
 
 def predict_csv(file):
-    """Analyze network flows and flag anomalous activity."""
-    model, features = load_model()
+    """Validate a network-flow CSV and predict anomalous activity."""
 
-    df = pd.read_csv(file)
-    df.columns = df.columns.str.strip()
+    if file is None:
+        raise ValueError("Please upload a CSV file.")
 
-    # Check required features
-    missing = [col for col in features if col not in df.columns]
-    if missing:
+    try:
+        df = pd.read_csv(file)
+    except pd.errors.EmptyDataError:
+        raise ValueError("The uploaded CSV is empty.")
+    except (pd.errors.ParserError, UnicodeDecodeError):
+        raise ValueError("Unable to read this file as a valid CSV.")
+
+    if df.empty:
+        raise ValueError("The CSV contains no data rows.")
+
+    if len(df) > MAX_ROWS:
         raise ValueError(
-            f"CSV is missing required columns: {missing}"
+            f"CSV contains {len(df):,} rows. "
+            f"The current limit is {MAX_ROWS:,} rows."
         )
 
-    # Select and prepare model features
+    df.columns = df.columns.astype(str).str.strip()
+
+    if df.columns.duplicated().any():
+        raise ValueError("The CSV contains duplicate column names.")
+
+    model, features = load_model()
+
+    missing = [col for col in features if col not in df.columns]
+
+    if missing:
+        raise ValueError(
+            "CSV is missing required network-flow features: "
+            + ", ".join(missing)
+        )
+
     X = df[features].copy()
 
     for col in features:
@@ -40,15 +73,36 @@ def predict_csv(file):
 
     X.replace([np.inf, -np.inf], np.nan, inplace=True)
 
-    # Predict anomalies
-    scores = model.decision_function(X)
-    predictions = np.where(
-        scores < THRESHOLD, "Anomaly", "Normal"
-    )
+    # Reject rows with no usable values across all required features.
+    unusable_rows = X.isna().all(axis=1)
 
-    # Attach results to original rows
+    if unusable_rows.any():
+        raise ValueError(
+            f"{unusable_rows.sum()} row(s) contain no usable values "
+            "in the required features. Please check your CSV."
+        )
+
+    # The trained pipeline imputes individual missing feature values.
+    scores = model.decision_function(X)
+    predictions = np.where(scores < THRESHOLD, "Anomaly", "Normal")
+
     results = df.copy()
     results["anomaly_score"] = scores
     results["prediction"] = predictions
 
-    return results
+    anomaly_count = int((predictions == "Anomaly").sum())
+    total_rows = len(results)
+
+    summary = {
+        "total_flows": total_rows,
+        "anomaly_count": anomaly_count,
+        "normal_count": total_rows - anomaly_count,
+        "anomaly_percentage": round(
+            anomaly_count / total_rows * 100, 2
+        ),
+    }
+
+    return {
+        "results": results,
+        "summary": summary,
+    }
