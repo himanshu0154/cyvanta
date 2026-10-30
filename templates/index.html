@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyvanta | Network Security</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <aside class="sidebar">
+        <h2 class="logo">CYVANTA<span>.</span></h2>
+        <p class="nav-label">WORKSPACE</p>
+        <a href="#overview" class="nav-item active">◈ Overview</a>
+        <a href="#traffic" class="nav-item">▥ Traffic Analysis</a>
+        <a href="#results" class="nav-item">⌕ Investigations</a>
+        <div class="sidebar-bottom">
+            <span class="status-dot"></span>
+            ML Engine Ready
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">SECURITY OPERATIONS / OVERVIEW</p>
+                <h1>Network Security Dashboard</h1>
+                <p class="subtitle">Analyze network flows and investigate unusual activity.</p>
+            </div>
+            <div class="system-status"><span class="status-dot"></span> System Online</div>
+        </header>
+
+        <section id="overview">
+            <div class="section-heading">
+                <h2>Overview</h2>
+                <span class="muted">Results from your latest analysis</span>
+            </div>
+
+            <div class="kpi-grid">
+                <article class="kpi-card">
+                    <p>Total Flows</p>
+                    <h3 id="totalFlows">—</h3>
+                    <span>Analyzed network flows</span>
+                </article>
+                <article class="kpi-card">
+                    <p>Normal Flows</p>
+                    <h3 id="normalFlows">—</h3>
+                    <span>Classified as normal</span>
+                </article>
+                <article class="kpi-card alert-card">
+                    <p>Anomalous Flows</p>
+                    <h3 id="anomalyFlows">—</h3>
+                    <span>Require investigation</span>
+                </article>
+                <article class="kpi-card">
+                    <p>Anomaly Rate</p>
+                    <h3 id="anomalyRate">—</h3>
+                    <span>Percentage of analyzed flows</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="upload-panel">
+            <div>
+                <p class="eyebrow">TRAFFIC ANALYSIS</p>
+                <h2>Analyze Network Traffic</h2>
+                <p class="muted">Upload a CSV containing the eight required network-flow features.</p>
+            </div>
+            <form id="uploadForm">
+                <label for="csvFile" class="file-picker">Choose CSV file</label>
+                <input type="file" id="csvFile" accept=".csv,text/csv" required>
+                <span id="fileName">No file selected</span>
+                <button type="submit" id="analyzeBtn">Analyze Traffic →</button>
+            </form>
+            <p id="message" role="status" aria-live="polite"></p>
+        </section>
+
+        <section id="traffic">
+            <div class="section-heading">
+                <h2>Traffic Insights</h2>
+                <span class="muted">Based on the latest uploaded CSV</span>
+            </div>
+            <div class="charts-grid">
+                <article class="panel chart-panel">
+                    <h3>Normal vs Anomalous</h3>
+                    <p class="muted">Distribution of model predictions</p>
+                    <div class="chart-container">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </article>
+                <article class="panel chart-panel">
+                    <h3>Anomaly Score Distribution</h3>
+                    <p class="muted">More negative scores are generally more anomalous.</p>
+                    <div class="chart-container">
+                        <canvas id="scoreChart"></canvas>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section id="results">
+            <div class="section-heading results-heading">
+                <div>
+                    <h2>Investigation Results</h2>
+                    <p class="muted">Review individual flows flagged by the model.</p>
+                </div>
+                <button id="downloadBtn" class="secondary-btn" disabled>↓ Export CSV</button>
+            </div>
+
+            <div class="panel table-panel">
+                <div class="table-toolbar">
+                    <input type="search" id="searchInput" placeholder="Search results...">
+                    <select id="predictionFilter">
+                        <option value="All">All predictions</option>
+                        <option value="Anomaly">Anomalies</option>
+                        <option value="Normal">Normal</option>
+                    </select>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+    <th>Flow ID</th>
+    <th>Prediction</th>
+    <th>Anomaly Score</th>
+    <th>Packet Length Std</th>
+    <th>Packet Length Mean</th>
+    <th>ACK Flag Count</th>
+    <th>Flow IAT Mean</th>
+    <th>Total Length Bwd Packets</th>
+    <th>Total Fwd Packets</th>
+    <th>Flow Duration</th>
+</tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <tr>
+                                <td colspan="6" class="empty-state">Upload a CSV to see analysis results.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer" id="tableFooter">No results available</div>
+            </div>
+            <p class="disclaimer">An anomaly is an unusual pattern, not confirmation of a cyberattack.</p>
+        </section>
+        <footer>CYVANTA · AI-ASSISTED NETWORK ANOMALY DETECTION</footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
