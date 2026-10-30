@@ -14,6 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR / "ml"))
 
 from pipeline import predict_csv
+from attack_timeline import generate_attack_timeline
 
 logging.basicConfig(level=logging.INFO)
 
@@ -44,6 +45,7 @@ def analyze():
             return jsonify({"error": "The uploaded CSV is empty."}), 400
 
         result = predict_csv(io.BytesIO(content))
+        timeline = generate_attack_timeline(result["results"])
 
         # Convert non-JSON values (such as NaN) safely.
         results_df = result["results"].replace([float("inf"), float("-inf")], pd.NA)
@@ -51,7 +53,8 @@ def analyze():
 
         return jsonify({
             "summary": result["summary"],
-            "results": results_df.to_dict(orient="records")
+         "results": results_df.to_dict(orient="records"),
+          "attack_timeline": timeline
         })
 
     except ValueError as e:
