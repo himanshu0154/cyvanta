@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 import joblib
@@ -8,30 +7,25 @@ import pandas as pd
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
 
-THRESHOLD = -0.03
+THRESHOLD = -0.04045090522184547
 MAX_ROWS = 750_000
 
 
 def load_model():
-    """Load the trained model and its required features."""
+    """Load the validated anomaly detection model and features."""
     model_path = MODEL_DIR / "isolation_forest.joblib"
     features_path = MODEL_DIR / "features.joblib"
 
     if not model_path.exists() or not features_path.exists():
         raise FileNotFoundError(
-            "Model files not found. Check that ml/models/ contains "
-            "isolation_forest.joblib and features.joblib."
+            "Model files not found in ml/models/."
         )
 
-    model = joblib.load(model_path)
-    features = joblib.load(features_path)
-
-    return model, features
+    return joblib.load(model_path), joblib.load(features_path)
 
 
 def predict_csv(file):
-    """Validate a network-flow CSV and predict anomalous activity."""
-
+    """Validate a network-flow CSV and detect anomalous activity."""
     if file is None:
         raise ValueError("Please upload a CSV file.")
 
@@ -59,7 +53,6 @@ def predict_csv(file):
     model, features = load_model()
 
     missing = [col for col in features if col not in df.columns]
-
     if missing:
         raise ValueError(
             "CSV is missing required network-flow features: "
@@ -68,27 +61,29 @@ def predict_csv(file):
 
     X = df[features].copy()
 
+
     for col in features:
         X[col] = pd.to_numeric(X[col], errors="coerce")
 
     X.replace([np.inf, -np.inf], np.nan, inplace=True)
 
-    # Reject rows with no usable values across all required features.
-    unusable_rows = X.isna().all(axis=1)
+    for col in ["Flow Bytes/s", "Flow Packets/s", "Flow Duration"]:
+        if col in X.columns:
+            X.loc[X[col] < 0, col] = np.nan
 
+    unusable_rows = X.isna().all(axis=1)
     if unusable_rows.any():
         raise ValueError(
-            f"{unusable_rows.sum()} row(s) contain no usable values "
-            "in the required features. Please check your CSV."
+            f"{unusable_rows.sum()} row(s) contain no usable feature values."
         )
 
-    # The trained pipeline imputes individual missing feature values.
+
     scores = model.decision_function(X)
+  
     predictions = np.where(scores < THRESHOLD, "Anomaly", "Normal")
 
     results = df.copy()
 
-    # Simulated timestamps for demonstration only
     if "Timestamp" not in results.columns:
         start_time = pd.Timestamp.now().floor("s")
         results["Timestamp"] = (
@@ -102,16 +97,14 @@ def predict_csv(file):
     anomaly_count = int((predictions == "Anomaly").sum())
     total_rows = len(results)
 
-    summary = {
-        "total_flows": total_rows,
-        "anomaly_count": anomaly_count,
-        "normal_count": total_rows - anomaly_count,
-        "anomaly_percentage": round(
-            anomaly_count / total_rows * 100, 2
-        ),
-    }
-
     return {
         "results": results,
-        "summary": summary,
+        "summary": {
+            "total_flows": total_rows,
+            "anomaly_count": anomaly_count,
+            "normal_count": total_rows - anomaly_count,
+            "anomaly_percentage": round(
+                anomaly_count / total_rows * 100, 2
+            ),
+        },
     }
