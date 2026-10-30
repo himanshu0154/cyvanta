@@ -13,7 +13,7 @@ app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR / "ml"))
 
-from pipeline import predict_csv
+from ml.pipeline import predict_csv
 
 logging.basicConfig(level=logging.INFO)
 
