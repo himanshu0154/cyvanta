@@ -11,3 +11,9 @@ venv/
 # Dataset files
 ml/data/*.csv
 !ml/data/sample_network_flows.csv
+
+# Local secrets and persisted investigation evidence/metadata
+.env
+.env.*
+!.env.example
+instance/

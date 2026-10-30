@@ -1,364 +1,101 @@
-const uploadForm = document.getElementById("uploadForm");
-const csvFile = document.getElementById("csvFile");
-const fileName = document.getElementById("fileName");
-const analyzeBtn = document.getElementById("analyzeBtn");
-const message = document.getElementById("message");
-
-const totalFlows = document.getElementById("totalFlows");
-const normalFlows = document.getElementById("normalFlows");
-const anomalyFlows = document.getElementById("anomalyFlows");
-const anomalyRate = document.getElementById("anomalyRate");
-
-const resultsBody = document.getElementById("resultsBody");
-const searchInput = document.getElementById("searchInput");
-const predictionFilter = document.getElementById("predictionFilter");
-const downloadBtn = document.getElementById("downloadBtn");
-const tableFooter = document.getElementById("tableFooter");
-
-let allResults = [];
-
-const trafficChart = new Chart(
-    document.getElementById("trafficChart"),
-    {
-        type: "doughnut",
-        data: {
-            labels: ["Normal", "Anomaly"],
-            datasets: [{
-                data: [0, 0],
-                backgroundColor: ["#10b981", "#f43f5e"],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: "bottom",
-                    labels: { color: "#cbd5e1" }
-                }
-            }
+(function () {
+    "use strict";
+    const dataTools = window.CyvantaData;
+    const $ = id => document.getElementById(id);
+    const events = new EventTarget();
+    const store = window.CyvantaAnalysis = {
+        current: null, status: "initial", error: "", focusedRecord: null,
+        subscribe(listener) { events.addEventListener("change", listener); },
+        publish() { events.dispatchEvent(new Event("change")); },
+        inspect(row, trigger, context) { window.dispatchEvent(new CustomEvent("cyvanta:inspect", { detail: { row, trigger, context } })); },
+        showRecord(row) { this.focusedRecord = row.record_index; }
+    };
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const chartOptions = {
+        responsive: true, maintainAspectRatio: false, animation: reducedMotion ? false : undefined,
+        plugins: { legend: { position: "bottom", labels: { color: "#cbd5e1" } } }
+    };
+    const charts = {};
+    function createChart(id, type, dataset) {
+        if (typeof window.Chart !== "function") {
+            const notice = document.createElement("p"); notice.className = "muted";
+            notice.textContent = "Chart library unavailable. Analysis totals and tables remain available.";
+            $(id).replaceWith(notice); return null;
         }
-    }
-);
-
-const scoreChart = new Chart(
-    document.getElementById("scoreChart"),
-    {
-        type: "bar",
-        data: {
-            labels: [],
-            datasets: [{
-                label: "Number of flows",
-                data: [],
-                backgroundColor: "#818cf8",
-                borderRadius: 5
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: { color: "#cbd5e1" }
-                }
-            },
-            scales: {
-                x: {
-                    ticks: { color: "#94a3b8" },
-                    grid: { display: false }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: { color: "#94a3b8", precision: 0 },
-                    grid: { color: "#263247" }
-                }
-            }
-        }
-    }
-);
-
-csvFile.addEventListener("change", () => {
-    fileName.textContent = csvFile.files.length
-        ? csvFile.files[0].name
-        : "No file selected";
-});
-
-uploadForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const file = csvFile.files[0];
-
-    if (!file) {
-        showMessage("Please select a CSV file.", "error");
-        return;
-    }
-
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-        showMessage("Please upload a CSV file.", "error");
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    analyzeBtn.disabled = true;
-    analyzeBtn.textContent = "Analyzing...";
-    showMessage("Analyzing network traffic. Please wait...", "info");
-
-    try {
-        const response = await fetch("/api/analyze", {
-            method: "POST",
-            body: formData
-        });
-
-        const text = await response.text();
-
-let data;
-try {
-    data = JSON.parse(text);
-} catch {
-    throw new Error(`Server returned HTML instead of JSON (HTTP ${response.status}). Check the Flask terminal.`);
-}
-
-        if (!response.ok) {
-            throw new Error(data.error || "Analysis failed.");
-        }
-
-        allResults = data.results || [];
-
-        updateDashboard(data.summary, allResults);
-        renderTable();
-
-        showMessage("Analysis completed successfully.", "success");
-    } catch (error) {
-        showMessage(error.message || "Something went wrong.", "error");
-    } finally {
-        analyzeBtn.disabled = false;
-        analyzeBtn.textContent = "Analyze Traffic";
-    }
-});
-
-function updateDashboard(summary, results) {
-    totalFlows.textContent = summary.total_flows ?? 0;
-    normalFlows.textContent = summary.normal_count ?? 0;
-    anomalyFlows.textContent = summary.anomaly_count ?? 0;
-    anomalyRate.textContent =
-        `${Number(summary.anomaly_percentage ?? 0).toFixed(2)}%`;
-
-    trafficChart.data.datasets[0].data = [
-        Number(summary.normal_count ?? 0),
-        Number(summary.anomaly_count ?? 0)
-    ];
-    trafficChart.update();
-
-    updateScoreChart(results);
-}
-
-function updateScoreChart(results) {
-    const scores = results
-        .map(row => Number(row.anomaly_score))
-        .filter(Number.isFinite);
-
-    const binCount = 10;
-    const bins = Array(binCount).fill(0);
-    const labels = [];
-
-    if (scores.length === 0) {
-        scoreChart.data.labels = [];
-        scoreChart.data.datasets[0].data = [];
-        scoreChart.update();
-        return;
-    }
-
-    const min = Math.min(...scores);
-    const max = Math.max(...scores);
-
-    if (min === max) {
-        labels.push(min.toFixed(4));
-        bins[0] = scores.length;
-        scoreChart.data.labels = labels;
-        scoreChart.data.datasets[0].data = [scores.length];
-    } else {
-        const width = (max - min) / binCount;
-
-        for (let i = 0; i < binCount; i++) {
-            const start = min + i * width;
-            const end = start + width;
-
-            labels.push(`${start.toFixed(3)}–${end.toFixed(3)}`);
-        }
-
-        scores.forEach(score => {
-            const index = Math.min(
-                Math.floor((score - min) / width),
-                binCount - 1
-            );
-            bins[index]++;
-        });
-
-        scoreChart.data.labels = labels;
-        scoreChart.data.datasets[0].data = bins;
-    }
-
-    scoreChart.update();
-}
-
-function renderTable() {
-    const query = searchInput.value.trim().toLowerCase();
-    const filter = predictionFilter.value.toLowerCase();
-
-    const filteredResults = allResults.filter(item => {
-        const prediction = String(item.prediction ?? "").toLowerCase();
-
-        const matchesFilter =
-            filter === "all" || prediction === filter;
-
-        const matchesSearch = Object.values(item).some(value =>
-            String(value ?? "").toLowerCase().includes(query)
-        );
-
-        return matchesFilter && matchesSearch;
-    });
-
-    resultsBody.replaceChildren();
-
-    if (!filteredResults.length) {
-        resultsBody.innerHTML =
-            '<tr><td colspan="6" class="empty-state">No results found.</td></tr>';
-    } else {
-        filteredResults.forEach((item, index) => {
-            const row = document.createElement("tr");
-            row.className =
-    String(item.prediction).toLowerCase() === "anomaly"
-        ? "anomaly-row"
-        : "normal-row";
-
-            const values = [
-   
-    item["Flow ID"] ?? item.flow_id ?? index + 1,
-    item.prediction ?? "Unknown",
-    formatNumber(item.anomaly_score, 6),
-    formatNumber(item["Packet Length Std"]),
-    formatNumber(item["Packet Length Mean"]),
-    formatNumber(item["ACK Flag Count"]),
-    formatNumber(item["Flow IAT Mean"]),
-    formatNumber(item["Total Length of Bwd Packets"]),
-    formatNumber(item["Total Fwd Packets"]),
-    formatNumber(item["Flow Duration"])
-];
-
-            values.forEach((value, columnIndex) => {
-                const cell = document.createElement("td");
-                cell.textContent = value;
-
-                if (columnIndex === 1) {
-                    cell.innerHTML = "";
-                    const badge = document.createElement("span");
-                    badge.textContent = value;
-                    badge.className =
-                        String(value).toLowerCase() === "anomaly"
-                            ? "badge anomaly"
-                            : "badge normal";
-                    cell.appendChild(badge);
-                }
-
-                row.appendChild(cell);
-            });
-
-            resultsBody.appendChild(row);
+        return new Chart($(id), {
+            type, data: { labels: [], datasets: [dataset] },
+            options: type === "bar" ? { ...chartOptions, plugins: { legend: { labels: { color: "#cbd5e1" } } }, scales: {
+                x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
+                y: { beginAtZero: true, ticks: { color: "#94a3b8", precision: 0 }, grid: { color: "#263247" } }
+            } } : chartOptions
         });
     }
-
-    tableFooter.textContent =
-        `Showing ${filteredResults.length} of ${allResults.length} flows`;
-}
-function formatNumber(value, decimals = 2) {
-    if (value === null || value === undefined || value === "") {
-        return "—";
+    charts.traffic = createChart("trafficChart", "doughnut", { data: [], backgroundColor: ["#10b981", "#f43f5e"], borderWidth: 0 });
+    charts.scores = createChart("scoreChart", "bar", { label: "Number of flows", data: [], backgroundColor: "#818cf8", borderRadius: 5 });
+    function showMessage(text, type) { $("message").textContent = text; $("message").className = `message ${type}`; }
+    async function analyzeFile(file) {
+        const body = new FormData(); body.append("file", file);
+        const response = await fetch("/api/analyze", { method: "POST", body });
+        let data;
+        try { data = await response.json(); }
+        catch { throw new Error(`The analysis service returned an invalid response (HTTP ${response.status}). Please retry.`); }
+        if (!response.ok) throw new Error(data.error || "Analysis failed. Please retry.");
+        if (!Array.isArray(data.results) || !data.summary) throw new Error("The analysis response is incomplete. Please retry.");
+        return data;
     }
-
-    const number = Number(value);
-
-    return Number.isFinite(number)
-        ? number.toLocaleString("en-US", {
-            maximumFractionDigits: decimals
-        })
-        : String(value);
-}
-
-function showMessage(text, type) {
-    message.textContent = text;
-    message.className = `message ${type}`;
-}
-
-searchInput.addEventListener("input", renderTable);
-predictionFilter.addEventListener("change", renderTable);
-
-downloadBtn.onclick = function () {
-    console.log("Export button clicked", allResults.length);
-    if (!allResults || allResults.length === 0) {
-        alert("Analyze a CSV first!");
-        return;
-    }
-
-    const columns = Object.keys(allResults[0]);
-
-    const csv = [
-        columns.join(","),
-        ...allResults.map(row =>
-            columns.map(col =>
-                JSON.stringify(row[col] ?? "")
-            ).join(",")
-        )
-    ].join("\n");
-
-    const blob = new Blob([csv], {
-        type: "text/csv;charset=utf-8;"
+    $("csvFile").addEventListener("change", () => { $("fileName").textContent = $("csvFile").files[0]?.name || "No file selected"; });
+    $("uploadForm").addEventListener("submit", async event => {
+        event.preventDefault();
+        if (store.status === "loading") return;
+        const file = $("csvFile").files[0];
+        if (!file || !file.name.toLowerCase().endsWith(".csv")) { showMessage("Please select a CSV file.", "error"); return; }
+        store.status = "loading"; store.error = ""; store.publish();
+        $("analyzeBtn").disabled = true; $("analyzeBtn").textContent = "Analyzing...";
+        $("engineStatus").textContent = "Analyzing uploaded CSV";
+        showMessage("Analyzing network traffic. Please wait...", "info");
+        try {
+            const data = await analyzeFile(file);
+            store.current = data; store.status = "completed"; store.focusedRecord = null;
+            if ($("downloadBtn")) $("downloadBtn").disabled = !data.results.length;
+            $("engineStatus").textContent = "Model inference completed";
+            updateDashboard(data); store.publish();
+            const warning = data.input_warnings?.length ? " Input validation warnings are available in flow details." : "";
+            showMessage("Analysis completed successfully." + warning, "success");
+        } catch (error) {
+            store.status = "error"; store.error = error.message || "Unable to reach the analysis service. Please retry.";
+            $("engineStatus").textContent = "Latest analysis failed";
+            showMessage(store.error + (store.current ? " Previous completed results remain visible." : ""), "error"); store.publish();
+        } finally { $("analyzeBtn").disabled = false; $("analyzeBtn").textContent = "Analyze Traffic →"; }
     });
-
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "cyvanta_results.csv";
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    URL.revokeObjectURL(link.href);
-};
-
-renderTable();
-
-downloadBtn.disabled = false;
-
-downloadBtn.addEventListener("click", () => {
-    if (!allResults.length) {
-        alert("Analyze a CSV file first.");
-        return;
+    $("retryAnalysis").addEventListener("click", () => $("uploadForm").requestSubmit());
+    function updateDashboard(data) {
+        const summary = data.summary;
+        $("totalFlows").textContent = dataTools.formatNumber(summary.total_flows, 0);
+        $("normalFlows").textContent = dataTools.formatNumber(summary.normal_count, 0);
+        $("anomalyFlows").textContent = dataTools.formatNumber(summary.anomaly_count, 0);
+        $("anomalyRate").textContent = `${Number(summary.anomaly_percentage ?? 0).toFixed(2)}%`;
+        const counts = summary.severity_counts || {};
+        $("overviewSeverity").replaceChildren(document.createTextNode(`Anomaly severity: ${counts.HIGH ?? 0} High · ${counts.MEDIUM ?? 0} Medium · ${counts.LOW ?? 0} Low · ${summary.uncalibrated_count ?? 0} uncalibrated. `));
+        const link = document.createElement("a"); link.href = "#alerts"; link.textContent = "View prioritized alerts →"; $("overviewSeverity").append(link);
+        if (charts.traffic) {
+            charts.traffic.data.labels = ["Normal", "Anomaly"];
+            charts.traffic.data.datasets[0].data = [summary.normal_count, summary.anomaly_count]; charts.traffic.update();
+        }
+        if (charts.scores) {
+            const histogram = dataTools.histogram(data.results.map(row => row.anomaly_score));
+            charts.scores.data.labels = histogram.bins.map(bin => `${bin.start.toFixed(3)}–${bin.end.toFixed(3)}`);
+            charts.scores.data.datasets[0].data = histogram.bins.map(bin => bin.count); charts.scores.update();
+        }
     }
-
-    const headers = Object.keys(allResults[0]);
-
-    const csv = [
-        headers.join(","),
-        ...allResults.map(row =>
-            headers.map(key =>
-                `"${String(row[key] ?? "").replace(/"/g, '""')}"`
-            ).join(",")
-        )
-    ].join("\n");
-
-    const blob = new Blob([csv], {
-        type: "text/csv;charset=utf-8;"
-    });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "cyvanta_analysis.csv";
-    link.click();
-
-    URL.revokeObjectURL(url);
-});
+    function badge(value, type) { const span = document.createElement("span"); span.textContent = value; span.className = `badge ${type}`; return span; }
+    store.badge = badge;
+    store.exportRows = function (rows, filename) {
+        if (!rows.length) return;
+        const url = URL.createObjectURL(new Blob([dataTools.toCsv(rows)], { type: "text/csv;charset=utf-8;" }));
+        const link = document.createElement("a"); link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+    if ($("downloadBtn")) $("downloadBtn").addEventListener("click", () => store.exportRows(store.current?.results || [], "cyvanta_analysis.csv"));
+    document.querySelectorAll(".nav-item").forEach(link => link.addEventListener("click", () => { document.querySelectorAll(".nav-item").forEach(item => item.classList.toggle("active", item === link)); }));
+    window.addEventListener("pagehide", () => Object.values(charts).forEach(chart => chart?.destroy()));
+})();
