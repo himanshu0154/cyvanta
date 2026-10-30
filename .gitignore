@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+.virtual_documents/
+
+# Dataset files
+ml/data/*.csv
+!ml/data/sample_network_flows.csv
