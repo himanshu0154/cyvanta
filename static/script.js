@@ -229,8 +229,13 @@ function renderTable() {
     } else {
         filteredResults.forEach((item, index) => {
             const row = document.createElement("tr");
+            row.className =
+    String(item.prediction).toLowerCase() === "anomaly"
+        ? "anomaly-row"
+        : "normal-row";
 
             const values = [
+    item.Timestamp ?? "—",
     item["Flow ID"] ?? item.flow_id ?? index + 1,
     item.prediction ?? "Unknown",
     formatNumber(item.anomaly_score, 6),

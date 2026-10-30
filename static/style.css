@@ -536,3 +536,15 @@ footer {
 #analyzeBtn:hover {
     background: #1e293b !important;
 }
+.anomaly-row {
+    background-color: rgba(244, 63, 94, 0.12) !important;
+}
+
+.anomaly-row td {
+    border-color: rgba(244, 63, 94, 0.25);
+}
+
+.anomaly-row .badge {
+    background-color: #f43f5e;
+    color: white;
+}

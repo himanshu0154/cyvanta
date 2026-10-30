@@ -87,6 +87,15 @@ def predict_csv(file):
     predictions = np.where(scores < THRESHOLD, "Anomaly", "Normal")
 
     results = df.copy()
+
+    # Simulated timestamps for demonstration only
+    if "Timestamp" not in results.columns:
+        start_time = pd.Timestamp.now().floor("s")
+        results["Timestamp"] = (
+            start_time + pd.to_timedelta(np.arange(len(results)), unit="s")
+        ).strftime("%Y-%m-%d %H:%M:%S")
+        results["Timestamp Type"] = "Simulated"
+
     results["anomaly_score"] = scores
     results["prediction"] = predictions
 
