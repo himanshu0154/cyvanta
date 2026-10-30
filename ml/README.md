@@ -38,3 +38,7 @@ Predictions are `Normal` or `Anomaly`.
 
 ## Important Limitations
 An anomaly is not necessarily a cyberattack. The model does not currently identify specific attack types. Its predictions require further validation on independent datasets.
+
+## Anomaly Severity
+
+The pipeline now enriches these same predictions with fixed reference-calibrated severity and prioritized alerts. It preserves the original custom decision cutoff and fitted preprocessing. Normal records never receive anomaly severity. See [severity documentation](../docs/anomaly-severity.md) for the scoring policy, API contract, calibration provenance and limits, and tests. The synthetic sample is used only for smoke tests, never for calibration.

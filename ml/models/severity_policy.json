@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "method": "reference_percentiles",
+  "score_basis": "distance_beyond_configured_decision_boundary",
+  "score_transformation": "max(0, decision_threshold - decision_score)",
+  "preprocessing_version": "cyvanta-network-features-v1",
+  "reference_model_version": "sha256:46071cfee6f3cd64814d39ee07b87304886317c0cab802838317cae9c0ae5b21",
+  "decision_threshold": -0.04045090522184547,
+  "thresholds": {
+    "medium": 0.08618907798089082,
+    "high": 0.10478438947187885
+  },
+  "quantiles": [
+    0.3333333333333333,
+    0.6666666666666666
+  ],
+  "calibrated_at": "2026-10-30T21:36:05.837232+00:00",
+  "reference": {
+    "source": "Wednesday-only final test subset reconstructed from ml/01_network_traffic_analysis.ipynb",
+    "dataset_sha256": "d79006c6c91d84d32694257501920a5f168b2c1c49797c3ebe7b3ef25d13f7e0",
+    "sample_count": 97555,
+    "anomaly_count": 39461,
+    "unique_strength_count": 12873,
+    "independent_reference": true,
+    "provenance": "Notebook cells 4/5, 53/62, 73/75; exact source archive SHA256s and 60/20/20 stratified seed-42 split reproduced. Saved imputer medians, 305617 benign fit samples, model parameters, validation cutoff/F1 and final test confusion counts verified without fitting. Reference uses Wednesday final-test rows only. Inputs overlapping benign fit data, cutoff validation or any Friday feature-selection data were excluded after saved imputation and float32 conversion.",
+    "source_archive_sha256": {
+      "Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv.zip": "d6839aecc1ff9fb45e27832b1f157c42c77601b83cff0befcac4f5bf10770b19",
+      "Wednesday-workingHours.pcap_ISCX.csv.zip": "8c0de47c4b523d9d7961125fc38e3ec979c4f4fc20f268bca0a9ca7f9c7ae0ea"
+    },
+    "combined_records": 831135,
+    "benign_training_records": 305617,
+    "validation_records": 166227,
+    "final_test_records": 166227,
+    "wednesday_test_candidates": 121593,
+    "excluded_overlapping_candidates": 24038,
+    "reference_index_basis": "zero-based concatenated source position before full-row deduplication",
+    "fingerprint_basis": "ordered little-endian int64 source indices followed by imputed float32 inputs",
+    "quantile_method": "linear",
+    "validation_cutoff": -0.04045090522184547,
+    "validation_f1": 0.8051429304752937,
+    "notebook_test_confusion_matrix": [
+      [
+        91801,
+        10072
+      ],
+      [
+        14649,
+        49705
+      ]
+    ],
+    "limitations": "Fixed ordinal statistical heuristic, not calibrated attack probability or operational impact. This notebook test partition was previously evaluated; its subsequent use for severity calibration means it is no longer a fresh severity evaluation set. Wednesday traffic was also inspected during earlier model exploration. External validation and analyst assessment are still required."
+  }
+}
