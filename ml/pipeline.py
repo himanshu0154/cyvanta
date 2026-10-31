@@ -27,7 +27,7 @@ except ImportError:  # Preserve `from pipeline import predict_csv` from the ml d
 
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "models"
-THRESHOLD = -0.02
+THRESHOLD = -0.04045090522184547
 MAX_ROWS = 750_000
 
 

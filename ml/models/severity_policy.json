@@ -14,13 +14,13 @@
     0.3333333333333333,
     0.6666666666666666
   ],
-  "calibrated_at": "2026-10-30T21:36:05.837232+00:00",
+  "calibrated_at": "2026-10-30T23:47:35.366832+00:00",
   "reference": {
     "source": "Wednesday-only final test subset reconstructed from ml/01_network_traffic_analysis.ipynb",
     "dataset_sha256": "d79006c6c91d84d32694257501920a5f168b2c1c49797c3ebe7b3ef25d13f7e0",
     "sample_count": 97555,
     "anomaly_count": 39461,
-    "unique_strength_count": 12873,
+    "unique_strength_count": 12874,
     "independent_reference": true,
     "provenance": "Notebook cells 4/5, 53/62, 73/75; exact source archive SHA256s and 60/20/20 stratified seed-42 split reproduced. Saved imputer medians, 305617 benign fit samples, model parameters, validation cutoff/F1 and final test confusion counts verified without fitting. Reference uses Wednesday final-test rows only. Inputs overlapping benign fit data, cutoff validation or any Friday feature-selection data were excluded after saved imputation and float32 conversion.",
     "source_archive_sha256": {
