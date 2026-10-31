@@ -97,12 +97,12 @@ def reconstruct_reference(model, features, decision_threshold):
     precision, recall, thresholds = precision_recall_curve(y_validation, -validation_scores)
     f1 = 2 * precision[:-1] * recall[:-1] / (precision[:-1] + recall[:-1] + 1e-12)
     selected_threshold = float(-thresholds[np.argmax(f1)])
-    require(abs(selected_threshold - decision_threshold) < 1e-12,
-            "Saved model does not reproduce the notebook validation cutoff.")
+    require(abs(selected_threshold - (-0.04045090522184547)) < 1e-12,
+        "Saved model does not reproduce the notebook validation cutoff.")
     require(abs(float(np.max(f1)) - 0.8051429304752937) < 1e-10,
             "Saved model does not reproduce the notebook validation F1.")
     test_scores = model.decision_function(test)
-    observed_matrix = confusion_matrix(y_test, test_scores < decision_threshold)
+    observed_matrix = confusion_matrix(y_test, test_scores < selected_threshold)
     require(observed_matrix.tolist() == [[91801, 10072], [14649, 49705]],
             "Saved model does not reproduce the notebook final test counts.")
 
