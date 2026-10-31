@@ -14,7 +14,7 @@
     0.3333333333333333,
     0.6666666666666666
   ],
-  "calibrated_at": "2026-10-30T23:47:35.366832+00:00",
+  "calibrated_at": "2026-10-31T02:38:06.602776+00:00",
   "reference": {
     "source": "Wednesday-only final test subset reconstructed from ml/01_network_traffic_analysis.ipynb",
     "dataset_sha256": "d79006c6c91d84d32694257501920a5f168b2c1c49797c3ebe7b3ef25d13f7e0",
