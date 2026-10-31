@@ -21,7 +21,7 @@ from incident_prompts import PROMPT_VERSION, SYSTEM_INSTRUCTIONS, TASK_INSTRUCTI
 MAX_CONTEXT_BYTES = 64_000
 MAX_PROVIDER_BYTES = 256_000
 MAX_QUESTION_LENGTH = 2000
-MAX_OUTPUT_TOKENS = 4000
+MAX_OUTPUT_TOKENS = 8192
 
 
 class AIError(Exception):
@@ -89,9 +89,24 @@ class OpenAICompatibleProvider:
     def generate(self, config, messages):
         if not config.status()["available"]:
             raise AIError(config.status()["reason"], "ai_not_configured")
-        payload = {"model": config.model, "messages": messages, "max_completion_tokens": MAX_OUTPUT_TOKENS,
-                   "store": False, "response_format": {"type": "json_schema", "json_schema": {
-                       "name": "cyvanta_incident_intelligence", "strict": True, "schema": response_schema()}}}
+        is_openai = "api.openai.com" in config.base_url
+        payload = {
+            "model": config.model,
+            "messages": messages,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "cyvanta_incident_intelligence",
+                    "strict": True,
+                    "schema": response_schema(),
+                },
+            },
+        }
+        if is_openai:
+            payload["max_completion_tokens"] = MAX_OUTPUT_TOKENS
+            payload["store"] = False
+        else:
+            payload["max_tokens"] = MAX_OUTPUT_TOKENS
         body = json.dumps(payload, allow_nan=False).encode("utf-8")
         deadline = self.clock() + config.timeout
         for attempt in range(config.max_retries + 1):
@@ -263,7 +278,7 @@ def validate_ai_content(content, context):
     # this conservative filter is an additional guard, not semantic verification.
     for sentence in re.split(r"[\n.!?]", narrative):
         sentence = sentence.strip()
-        sentence = re.sub(r"\b(?:not|no|unconfirmed|cannot establish|does not establish|does not confirm|is not|was not)\s+(?:a |an |the )?(?:confirmed (?:attack|compromise)|feature (?:importance|attribution)|(?:attack|compromise)|(?:compromised|malicious attack))\b", "", sentence, flags=re.I)
+        sentence = re.sub(r"\b(?:not|no|unconfirmed|cannot establish|does not establish|does not confirm|is not|was not|rather than|instead of|without|does not indicate)\s+(?:a |an |the )?(?:confirmed (?:attack|compromise|malicious)|feature (?:importance|attribution)|(?:attack|compromise|malicious)|(?:compromised|malicious attack))\b", "", sentence, flags=re.I)
         if re.search(r"\b(confirmed (?:attack|compromise|malicious)|(?:is|was|are|were) (?:a |an )?(?:DDoS attack|compromised|malicious attack)|(?:blocked|isolated|disabled) (?:the |all )?(?:host|IP|account|traffic)|caused the (?:model|prediction)|feature (?:importance|attribution) (?:shows|indicates|caused)|feature (?:importance|attribution) is (?!not\b|unavailable\b)|\d+(?:\.\d+)?% (?:attack|malicious|confidence|probability))\b", sentence, re.I):
             _fail("The AI response made an unsupported attribution, certainty, or action-execution claim.")
     for count in re.findall(r"\b(\d+)\s+(?:anomalous\s+)?(?:events?|flows?|records?|observations?)\b", narrative, re.I):

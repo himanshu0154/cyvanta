@@ -1,14 +1,32 @@
 import io
 import logging
 import math
-from pathlib import PureWindowsPath
+import os
+from pathlib import Path, PureWindowsPath
 
 from flask import Flask, jsonify, render_template, request
 import numpy as np
 import pandas as pd
 from werkzeug.exceptions import RequestEntityTooLarge
 
+def load_env():
+    _env_path = Path(__file__).resolve().parent / ".env"
+    if _env_path.is_file():
+        with _env_path.open(encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if _line and not _line.startswith("#") and "=" in _line:
+                    _k, _, _v = _line.partition("=")
+                    _k, _v = _k.strip(), _v.strip()
+                    if len(_v) >= 2 and _v[0] == _v[-1] and _v[0] in ("'", '"'):
+                        _v = _v[1:-1]
+                    if _k:
+                        os.environ[_k] = _v
+
+load_env()
+
 from ml.pipeline import ModelUnavailableError, load_model, predict_csv
+from incident_store import IncidentValidationError
 from incident_routes import current_owner, get_store, initialize_investigations
 from incident_ai_routes import incident_ai_blueprint
 
@@ -72,7 +90,16 @@ def analyze():
             model, features = load_model()
             imputer = next((step for _name, step in getattr(model, "steps", []) if hasattr(step, "statistics_")), None)
             medians = dict(zip(features, imputer.statistics_)) if imputer is not None else {}
-            result["investigation"] = get_store().save_analysis(current_owner(), result, reference_medians=medians)
+            store = get_store()
+            alerts = result.get("alerts", [])
+            max_alerts = getattr(store, "max_events", 20_000)
+            bounded_result = dict(result, alerts=alerts[:max_alerts]) if len(alerts) > max_alerts else result
+            try:
+                result["investigation"] = store.save_analysis(current_owner(), bounded_result, reference_medians=medians)
+            except IncidentValidationError:
+                # If bounded alerts still exceed capacity budget, save top 5,000 prioritized alerts
+                fallback_alerts = alerts[:5000]
+                result["investigation"] = store.save_analysis(current_owner(), dict(result, alerts=fallback_alerts), reference_medians=medians)
         except Exception:
             app.logger.error("Optional investigation snapshot could not be saved")
             result["investigation"] = {

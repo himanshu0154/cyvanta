@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cyvanta | Network Security</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='investigation.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -188,24 +189,77 @@
                     <div><button id="alertsPrevious" type="button" class="secondary-btn" disabled>Previous</button> <button id="alertsNext" type="button" class="secondary-btn" disabled>Next</button></div>
                 </div>
             </div>
-            <p class="disclaimer">Priority follows severity, then descending deviation strength, then original record order. Uploaded CSV analysis is a batch snapshot.</p>
+            <p class="disclaimer">Priority follows severity, then descending deviation strength, then original record order.</p>
         </section>
 
         <footer>CYVANTA · AI-ASSISTED NETWORK ANOMALY DETECTION</footer>
     </main>
 
     <dialog id="alertDrawer" class="alert-drawer" aria-labelledby="drawerTitle">
-        <div class="drawer-header"><div><p class="eyebrow">FLOW INSPECTION</p><h2 id="drawerTitle">Alert details</h2></div><button id="closeDrawer" type="button" class="secondary-btn" aria-label="Close flow details">Close ×</button></div>
+        <div class="drawer-header">
+            <div>
+                <p class="eyebrow">FLOW INSPECTION &amp; AI INTELLIGENCE</p>
+                <h2 id="drawerTitle">Alert details</h2>
+            </div>
+            <button id="closeDrawer" type="button" class="secondary-btn" aria-label="Close flow details">Close ×</button>
+        </div>
         <div id="drawerBadges" class="drawer-badges"></div>
         <p id="drawerExplanation" class="muted"></p>
-        <h3>Network information</h3><dl id="drawerNetwork" class="detail-grid"></dl>
-        <h3>Model analysis</h3><dl id="drawerModel" class="detail-grid"></dl>
-        <p class="muted">Feature-level explanation is not available for this prediction.</p>
-        <div class="drawer-actions"><button id="exportAlert" type="button" class="secondary-btn">Export flow</button></div>
-        <p class="disclaimer">An anomaly is an unusual pattern, not confirmation of a cyberattack.</p>
+
+        <div class="drawer-section">
+            <h3>Network information</h3>
+            <dl id="drawerNetwork" class="detail-grid"></dl>
+        </div>
+
+        <div class="drawer-section">
+            <h3>Model analysis</h3>
+            <dl id="drawerModel" class="detail-grid"></dl>
+        </div>
+
+        <div id="drawerAISection" class="drawer-ai-section">
+            <div class="drawer-ai-header">
+                <div>
+                    <h3>AI Incident Copilot</h3>
+                    <p class="small-caption muted">Grounded synthesis, triage guidance, and recommendations powered by Google Gemini.</p>
+                </div>
+                <span id="drawerAIStatusPill" class="ai-status-pill ai-offline" role="status" aria-live="polite">Checking AI status…</span>
+            </div>
+
+            <div class="drawer-ai-actions">
+                <button id="drawerExplainFlow" type="button" class="ai-primary-btn">🔍 Explain Flow with AI</button>
+                <button id="drawerSummaryFlow" type="button" class="ai-tool-btn">📋 Incident Summary</button>
+                <button id="drawerRecommendationsFlow" type="button" class="ai-tool-btn">🛡️ Recommendations</button>
+                <button id="drawerReportFlow" type="button" class="report-btn">📥 Generate Incident Report</button>
+            </div>
+
+            <p id="drawerAIStatus" class="muted small-caption" role="status" aria-live="polite">Ready for AI interpretation.</p>
+
+            <div id="drawerAIResult" class="drawer-ai-result"></div>
+
+            <div class="drawer-chat-area">
+                <h4 class="small-subheading">Ask Copilot About This Flow</h4>
+                <div class="chat-chips-container">
+                    <span class="chat-chips-label">Quick prompts:</span>
+                    <button type="button" class="chat-chip" data-prompt="What is the potential threat hypothesis for this flow?">Threat Hypothesis</button>
+                    <button type="button" class="chat-chip" data-prompt="Analyze the communication pattern and flow behavior.">Traffic Pattern</button>
+                    <button type="button" class="chat-chip" data-prompt="What are the immediate containment or triage steps?">Triage Steps</button>
+                </div>
+                <form id="drawerChatForm" class="chat-input-row" style="margin-top: 8px;">
+                    <input type="text" id="drawerChatInput" placeholder="Ask Copilot about this anomaly…" autocomplete="off">
+                    <button type="submit" id="drawerChatSubmit" class="secondary-btn">Ask</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="drawer-footer-actions">
+            <button id="exportAlert" type="button" class="secondary-btn">Export flow (CSV)</button>
+        </div>
+        <p class="disclaimer">Statistical anomalies indicate unusual flow patterns based on the baseline model. Advisory AI hypotheses require analyst validation.</p>
     </dialog>
     <script src="{{ url_for('static', filename='analysis-data.js') }}"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script src="{{ url_for('static', filename='alerts.js') }}"></script>
+    <script src="{{ url_for('static', filename='investigation-data.js') }}"></script>
+    <script src="{{ url_for('static', filename='investigation.js') }}"></script>
 </body>
 </html>

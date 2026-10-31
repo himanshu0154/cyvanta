@@ -150,6 +150,9 @@ def initialize_investigations(app):
                       PERMANENT_SESSION_LIFETIME=timedelta(days=7))
     app.extensions["investigations"] = IncidentStore(
         instance / "investigations.sqlite3",
+        max_events=env_integer("MAX_INVESTIGATION_EVENTS", 20_000, 1, 1_000_000),
+        max_analyses_per_owner=env_integer("MAX_ANALYSES_PER_OWNER", 50, 1, 1000),
+        max_total_bytes=env_integer("MAX_INVESTIGATION_BYTES", 512 * 1024 * 1024, 1, 4 * 1024 * 1024 * 1024),
         window_seconds=env_integer("CORRELATION_WINDOW_SECONDS", 300, 1, 86400),
         timezone_name=os.environ.get("TRAFFIC_TIMEZONE") or None,
         timestamp_format=os.environ.get("TRAFFIC_TIMESTAMP_FORMAT") or None,

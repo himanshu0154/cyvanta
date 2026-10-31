@@ -43,6 +43,7 @@
         if (!Array.isArray(data.results) || !data.summary) throw new Error("The analysis response is incomplete. Please retry.");
         return data;
     }
+    $("csvFile").addEventListener("click", () => { $("csvFile").value = null; });
     $("csvFile").addEventListener("change", () => { $("fileName").textContent = $("csvFile").files[0]?.name || "No file selected"; });
     $("uploadForm").addEventListener("submit", async event => {
         event.preventDefault();
